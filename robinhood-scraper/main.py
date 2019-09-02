@@ -120,8 +120,13 @@ def main(args):
         # currency_pairs.update_pairs_to_ids()
 
         # Sleep the remaining time to sleep only.
-        print(args.sleep_time - (time.time() - start_time))
-        time.sleep(args.sleep_time - (time.time() - start_time))
+        sleep_time = args.sleep_time - (time.time() - start_time)
+        if sleep_time <= 0.0:
+            # Something went wrong
+            logging.warning("sleep_time = {0}".format(sleep_time))
+            logging.warning("current time = {1}".format(time.time()))
+        else:
+            time.sleep(sleep_time)
 
     pool.close()
     pool.join()
