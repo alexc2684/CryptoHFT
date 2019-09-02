@@ -95,11 +95,12 @@ def main(args):
     currency_pairs = CurrencyPairs()
     pool = multiprocessing.Pool(10)
     pool_write = multiprocessing.Pool(10)
+
+    with open(args.token_file, 'r') as tf:
+            auth_token = tf.readline()
+
     while True:
         start_time = time.time()
-        # Get token from file
-        with open(args.token_file, 'r') as tf:
-            auth_token = tf.readline()
 
         # Send requests in parallel to make it faster
         all_parallel_args = []
