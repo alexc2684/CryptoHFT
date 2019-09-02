@@ -106,6 +106,7 @@ def main(args):
         for _, pair_id in currency_pairs.pairs_to_ids.items():
             curr_parallel_args = [pair_id, auth_token]
             all_parallel_args.append(curr_parallel_args)
+        # all_pair_data = pool.map(get_curr_data, all_parallel_args)
         all_pair_data = map(get_curr_data, all_parallel_args)
 
         # Save to file
