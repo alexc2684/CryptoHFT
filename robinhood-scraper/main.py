@@ -21,8 +21,9 @@ parser.add_argument('--log-level', type=str, choices=['INFO', 'DEBUG', 'WARNING'
 
 SCRAPE_CURRENCIES = [
     'BTC-USD', # Bitcoin
-    'ETH-USD', # Ethereum
 ]
+
+assert len(SCRAPE_CURRENCIES) == 1 # Because I switched out the pool.map to a normal map
 
 # Sent on all requests
 DEFAULT_HEADERS = {
@@ -92,7 +93,8 @@ def main(args):
         logging.info("{0} = {1}".format(arg_name, args_dict[arg_name]))
 
     currency_pairs = CurrencyPairs()
-
+    pool = multiprocessing.Pool(10)
+    pool_write = multiprocessing.Pool(10)
     while True:
         start_time = time.time()
         # Get token from file
@@ -100,28 +102,30 @@ def main(args):
             auth_token = tf.readline()
 
         # Send requests in parallel to make it faster
-        pool = multiprocessing.Pool(10)
-
         all_parallel_args = []
         for _, pair_id in currency_pairs.pairs_to_ids.items():
             curr_parallel_args = [pair_id, auth_token]
             all_parallel_args.append(curr_parallel_args)
-        all_pair_data = pool.map(get_curr_data, all_parallel_args)
+        all_pair_data = map(get_curr_data, all_parallel_args)
 
         # Save to file
         all_parallel_args = []
         for pair_data in all_pair_data:
             filename = args.output_file_fmt.format(pair_data['symbol'])
             all_parallel_args.append([filename, pair_data])
-        pool.map(save_metrics_to_csv, all_parallel_args)
-        pool.close()
-        pool.join()
+        pool_write.map_async(save_metrics_to_csv, all_parallel_args)
 
-        logging.info("Updating currency pairs")
-        currency_pairs.update_pairs_to_ids()
+        # logging.info("Updating currency pairs")
+        # currency_pairs.update_pairs_to_ids()
 
         # Sleep the remaining time to sleep only.
+        print(args.sleep_time - (time.time() - start_time))
         time.sleep(args.sleep_time - (time.time() - start_time))
+
+    pool.close()
+    pool.join()
+    pool_write.close()
+    pool_write.join()
 
 if __name__ == "__main__":
     args = parser.parse_args()
