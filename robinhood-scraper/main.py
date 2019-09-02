@@ -22,10 +22,6 @@ parser.add_argument('--log-level', type=str, choices=['INFO', 'DEBUG', 'WARNING'
 SCRAPE_CURRENCIES = [
     'BTC-USD', # Bitcoin
     'ETH-USD', # Ethereum
-    'BCH-USD', # Bitcoin Classic
-    'LTC-USD', # Litecoin
-    'XRP-USD', # Ripple
-    'ETC-USD', # Ethereum Classic
 ]
 
 # Sent on all requests
@@ -62,8 +58,10 @@ def get_curr_data(args):
         **DEFAULT_HEADERS,
         'Authorization': 'Bearer {0}'.format(auth_token)
     }
-
-    return requests.get(url, headers=headers).json()
+    req_time = time.time()
+    results = requests.get(url, headers=headers).json()
+    results['_time'] = req_time
+    return results
 
 def write_headers(filename, headers):
     with open(filename, 'w') as f:  # Just use 'w' mode in 3.x
