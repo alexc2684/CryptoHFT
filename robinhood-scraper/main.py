@@ -22,6 +22,15 @@ def main(args):
     for arg_name in args:
         logging.info("{0} = {1}".format(arg_name, args[arg_name]))
 
+    while True:    
+        # Get token from file
+
+        # Send request
+
+        # Save to file
+
+        # Sleep 
+
 if __name__ == "__main__":
     args = parser.parse_args()
     logging.basicConfig(level=args.log_level.upper())
