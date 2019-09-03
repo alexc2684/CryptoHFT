@@ -126,7 +126,7 @@ def main(args):
         if sleep_time <= 0.0:
             # Something went wrong
             logging.warning("sleep_time = {0}".format(sleep_time))
-            logging.warning("current time = {1}".format(time.time()))
+            logging.warning("current time = {0}".format(time.time()))
         else:
             time.sleep(sleep_time)
 
