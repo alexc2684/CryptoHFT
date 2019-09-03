@@ -100,35 +100,39 @@ def main(args):
             auth_token = tf.readline()
 
     while True:
-        start_time = time.time()
+        try:
+            start_time = time.time()
 
-        # Send requests in parallel to make it faster
-        all_parallel_args = []
-        for _, pair_id in currency_pairs.pairs_to_ids.items():
-            curr_parallel_args = [pair_id, auth_token]
-            all_parallel_args.append(curr_parallel_args)
-        # all_pair_data = pool.map(get_curr_data, all_parallel_args)
-        # Not in parallel!
-        all_pair_data = map(get_curr_data, all_parallel_args)
+            # Send requests in parallel to make it faster
+            all_parallel_args = []
+            for _, pair_id in currency_pairs.pairs_to_ids.items():
+                curr_parallel_args = [pair_id, auth_token]
+                all_parallel_args.append(curr_parallel_args)
+            # all_pair_data = pool.map(get_curr_data, all_parallel_args)
+            # Not in parallel!
+            all_pair_data = map(get_curr_data, all_parallel_args)
 
-        # Save to file
-        all_parallel_args = []
-        for pair_data in all_pair_data:
-            filename = args.output_file_fmt.format(pair_data['symbol'])
-            all_parallel_args.append([filename, pair_data])
-        pool_write.map_async(save_metrics_to_csv, all_parallel_args)
+            # Save to file
+            all_parallel_args = []
+            for pair_data in all_pair_data:
+                filename = args.output_file_fmt.format(pair_data['symbol'])
+                all_parallel_args.append([filename, pair_data])
+            pool_write.map_async(save_metrics_to_csv, all_parallel_args)
 
-        # logging.info("Updating currency pairs")
-        # currency_pairs.update_pairs_to_ids()
+            # logging.info("Updating currency pairs")
+            # currency_pairs.update_pairs_to_ids()
 
-        # Sleep the remaining time to sleep only.
-        sleep_time = args.sleep_time - (time.time() - start_time)
-        if sleep_time <= 0.0:
-            # Something went wrong
-            logging.warning("sleep_time = {0}".format(sleep_time))
-            logging.warning("current time = {0}".format(time.time()))
-        else:
-            time.sleep(sleep_time)
+            # Sleep the remaining time to sleep only.
+            sleep_time = args.sleep_time - (time.time() - start_time)
+            if sleep_time <= 0.0:
+                # Something went wrong
+                logging.warning("sleep_time = {0}".format(sleep_time))
+                logging.warning("current time = {0}".format(time.time()))
+            else:
+                time.sleep(sleep_time)
+        except (Exception e):
+            logging.error("------- Exception -------")
+            logging.error(str(e))
 
     pool.close()
     pool.join()
