@@ -74,10 +74,11 @@ def save_metrics_to_csv(args):
     Assume metrics is a dict like
     {'ask_price': '6.283982', 'bid_price': '6.266302', 'mark_price': '6.275142', 'high_price': '6.343000', 'low_price': '6.091000', 'open_price': '6.247500', 'symbol': 'ETCUSD', 'id': '7b577ce3-489d-4269-9408-796a0d1abb3a', 'volume': '23452255.152900'}
     """
-    filename, metrics = args
+    filename, metrics, write_headers = args
 
-    if not os.path.isfile(filename):
-        logging.info("Writing headers and initializing file {0}".format(filename))
+    if write_headers:
+        logging.warning("Writing headers and initializing file {0}".format(filename))
+        logging.warning("time = {0}".format(time.time()))
         headers = metrics.keys()
         write_headers(filename, headers)
 
@@ -95,33 +96,46 @@ def main(args):
     currency_pairs = CurrencyPairs()
     pool = multiprocessing.Pool(10)
     pool_write = multiprocessing.Pool(10)
-    while True:
-        start_time = time.time()
-        # Get token from file
-        with open(args.token_file, 'r') as tf:
+
+    with open(args.token_file, 'r') as tf:
             auth_token = tf.readline()
 
-        # Send requests in parallel to make it faster
-        all_parallel_args = []
-        for _, pair_id in currency_pairs.pairs_to_ids.items():
-            curr_parallel_args = [pair_id, auth_token]
-            all_parallel_args.append(curr_parallel_args)
-        # all_pair_data = pool.map(get_curr_data, all_parallel_args)
-        all_pair_data = map(get_curr_data, all_parallel_args)
+    is_first_loop = True
+    while True:
+        try:
+            start_time = time.time()
 
-        # Save to file
-        all_parallel_args = []
-        for pair_data in all_pair_data:
-            filename = args.output_file_fmt.format(pair_data['symbol'])
-            all_parallel_args.append([filename, pair_data])
-        pool_write.map_async(save_metrics_to_csv, all_parallel_args)
+            # Send requests in parallel to make it faster
+            all_parallel_args = []
+            for _, pair_id in currency_pairs.pairs_to_ids.items():
+                curr_parallel_args = [pair_id, auth_token]
+                all_parallel_args.append(curr_parallel_args)
+            # all_pair_data = pool.map(get_curr_data, all_parallel_args)
+            # Not in parallel!
+            all_pair_data = map(get_curr_data, all_parallel_args)
 
-        # logging.info("Updating currency pairs")
-        # currency_pairs.update_pairs_to_ids()
+            # Save to file
+            all_parallel_args = []
+            for pair_data in all_pair_data:
+                filename = args.output_file_fmt.format(pair_data['symbol'])
+                all_parallel_args.append([filename, pair_data, is_first_loop])
+            pool_write.map_async(save_metrics_to_csv, all_parallel_args)
+            is_first_loop = False
 
-        # Sleep the remaining time to sleep only.
-        print(args.sleep_time - (time.time() - start_time))
-        time.sleep(args.sleep_time - (time.time() - start_time))
+            # logging.info("Updating currency pairs")
+            # currency_pairs.update_pairs_to_ids()
+
+            # Sleep the remaining time to sleep only.
+            sleep_time = args.sleep_time - (time.time() - start_time)
+            if sleep_time <= 0.0:
+                # Something went wrong
+                logging.warning("sleep_time = {0}".format(sleep_time))
+                logging.warning("current time = {0}".format(time.time()))
+            else:
+                time.sleep(sleep_time)
+        except Exception (e):
+            logging.error("------- Exception -------")
+            logging.error(str(e))
 
     pool.close()
     pool.join()
