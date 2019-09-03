@@ -9,6 +9,16 @@ import os
 import requests
 import time
 
+def str2bool(v):
+    if isinstance(v, bool):
+       return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
 parser = argparse.ArgumentParser(description='Scrape robinhood data.')
 parser.add_argument('--token-file', type=str, required=True,
                     help='File that contains the auth access token to use')
@@ -18,6 +28,7 @@ parser.add_argument('--sleep-time', type=float, default=60.0,
                     help='Time to sleep between queries.')
 parser.add_argument('--log-level', type=str, choices=['INFO', 'DEBUG', 'WARNING'],
                     default='INFO', help='Log level.')
+parser.add_argument('--write-headers', type=str2bool)                    
 
 SCRAPE_CURRENCIES = [
     'BTC-USD', # Bitcoin
@@ -74,10 +85,11 @@ def save_metrics_to_csv(args):
     Assume metrics is a dict like
     {'ask_price': '6.283982', 'bid_price': '6.266302', 'mark_price': '6.275142', 'high_price': '6.343000', 'low_price': '6.091000', 'open_price': '6.247500', 'symbol': 'ETCUSD', 'id': '7b577ce3-489d-4269-9408-796a0d1abb3a', 'volume': '23452255.152900'}
     """
-    filename, metrics = args
+    filename, metrics, write_headers = args
 
-    if not os.path.isfile(filename):
-        logging.info("Writing headers and initializing file {0}".format(filename))
+    if write_headers:
+        logging.warning("Writing headers and initializing file {0}".format(filename))
+        logging.warning("time = {0}".format(time.time()))
         headers = metrics.keys()
         write_headers(filename, headers)
 
@@ -99,6 +111,7 @@ def main(args):
     with open(args.token_file, 'r') as tf:
             auth_token = tf.readline()
 
+    is_first_loop = True
     while True:
         try:
             start_time = time.time()
@@ -116,8 +129,9 @@ def main(args):
             all_parallel_args = []
             for pair_data in all_pair_data:
                 filename = args.output_file_fmt.format(pair_data['symbol'])
-                all_parallel_args.append([filename, pair_data])
+                all_parallel_args.append([filename, pair_data, is_first_loop])
             pool_write.map_async(save_metrics_to_csv, all_parallel_args)
+            is_first_loop = False
 
             # logging.info("Updating currency pairs")
             # currency_pairs.update_pairs_to_ids()
