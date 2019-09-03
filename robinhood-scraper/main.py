@@ -130,7 +130,7 @@ def main(args):
                 logging.warning("current time = {0}".format(time.time()))
             else:
                 time.sleep(sleep_time)
-        except (Exception e):
+        except Exception (e):
             logging.error("------- Exception -------")
             logging.error(str(e))
 
