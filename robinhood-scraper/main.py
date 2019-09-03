@@ -9,16 +9,6 @@ import os
 import requests
 import time
 
-def str2bool(v):
-    if isinstance(v, bool):
-       return v
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
-        return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
-        return False
-    else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
-
 parser = argparse.ArgumentParser(description='Scrape robinhood data.')
 parser.add_argument('--token-file', type=str, required=True,
                     help='File that contains the auth access token to use')
@@ -28,7 +18,6 @@ parser.add_argument('--sleep-time', type=float, default=60.0,
                     help='Time to sleep between queries.')
 parser.add_argument('--log-level', type=str, choices=['INFO', 'DEBUG', 'WARNING'],
                     default='INFO', help='Log level.')
-parser.add_argument('--write-headers', type=str2bool)                    
 
 SCRAPE_CURRENCIES = [
     'BTC-USD', # Bitcoin
