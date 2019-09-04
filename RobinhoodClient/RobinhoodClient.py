@@ -41,6 +41,7 @@ class RobinhoodClient:
     def login(self):
         client = Robinhood()
         client.login(username = self.USERNAME, password = self.PASSWORD, challenge_type = 'sms')
+        self.save_auth_data(client)
     """
     def login(self):
         status_code = 400
@@ -132,6 +133,13 @@ class RobinhoodClient:
         return content['mark_price']
 
     # Utils
+    def save_auth_data(self, client):
+        auth_data = {}
+        auth_data['device_token'] = client.device_token
+        auth_data['auth_token'] = client.auth_token
+        auth_data['refresh_token'] = client.refresh_token
+        open('auth.secret', 'w').write(json.dumps(auth_data))
+
     def generate_device_token(self):
         rands = []
         for i in range(0,16):
