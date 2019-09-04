@@ -4,6 +4,7 @@ import os
 from requests import get, post
 from uuid import uuid4
 
+from Robinhood import Robinhood
 
 class RobinhoodClient:
     DEFAULT_HEADERS = {
@@ -22,6 +23,7 @@ class RobinhoodClient:
     USERNAME = os.environ['RH_USERNAME']
     PASSWORD = os.environ['RH_PASSWORD']
     AUTH_TOKEN = os.environ['RH_TOKEN']
+    REFRESH_TOKEN = ""
 
     RH_API_URL = "https://api.robinhood.com/"
     RH_CRYPTO_URL = "https://nummus.robinhood.com/"
@@ -37,34 +39,49 @@ class RobinhoodClient:
         self.generate_device_token()
 
     def login(self):
-        headers = {
-                **self.DEFAULT_HEADERS,
-                **self.LOGIN_HEADERS
-                }
+        client = Robinhood()
+        client.login(username = self.USERNAME, password = self.PASSWORD, challenge_type = 'sms')
+    """
+    def login(self):
+        status_code = 400
+        while status_code != 200:
+            headers = {
+                    **self.DEFAULT_HEADERS,
+                    **self.LOGIN_HEADERS
+                    }
 
-        data = {
-                'client_id': self.CLIENT_ID,
-                'device_token': self.DEVICE_TOKEN,
-                'expires_in': 86400,
-                'grant_type': 'password',
-                'username': self.USERNAME,
-                'password': self.PASSWORD,
-                'scope': 'internal',
-                'challenge_type': 'sms'
-                }
+            data = {
+                    'client_id': self.CLIENT_ID,
+                    'device_token': self.DEVICE_TOKEN,
+                    'expires_in': 86400,
+                    'grant_type': 'password',
+                    'username': self.USERNAME,
+                    'password': self.PASSWORD,
+                    'scope': 'internal',
+                    'challenge_type': 'sms'
+                    }
 
-        print("---")
+
+            res = post(self.RH_API_URL + 'oauth2/token/', headers = headers, data = json.dumps(data))
+            data = json.loads(res.content)
+            print(data)
+            print(headers)
+            print("\n")
+            if res.status_code == 200:
+                status_code = 200
+            elif res.status_code == 400:
+                challenge_id = data['challenge']['id']
+                self.login_challenge(challenge_id)
+
         print(data)
-        print(headers)
-        print("---")
 
-        res = post(self.RH_API_URL + 'oauth2/token/', headers = headers, data = json.dumps(data))
-        print(res.reason)
-        print(res)
-        data = json.loads(res.content)
-        print(data)
-        #TODO: save auth token to file
-        return data['access_token']
+        if 'access_token' in data.keys() and 'refresh_token' in data.keys():
+            self.AUTH_TOKEN = data['access_token']
+            self.REFRESH_TOKEN = data['refresh_token']
+            print(self.AUTH_TOKEN)
+
+        return True
+    """
 
     def place_order(self, symbol, quantity, price, order_type):
         # validate symbol is in currency_pair
@@ -134,6 +151,18 @@ class RobinhoodClient:
                 id += "-"
 
         self.DEVICE_TOKEN = id
+
+    def login_challenge(self, challenge_id):
+        status_code = 404
+        while status_code != 200:
+            print("2FA Required. Input 6 digit code.")
+            sms_code = input()
+            challenge_data = {'response': sms_code}
+            self.DEFAULT_HEADERS['X-ROBINHOOD-CHALLENGE-RESPONSE-ID'] = challenge_id
+            self.DEFAULT_HEADERS['Content-Type'] = 'application/x-www-form-urlencoded'
+            challenge_endpoint = self.RH_API_URL + 'challenge/{}/respond/'.format(challenge_id)
+            res = post(challenge_endpoint, data = challenge_data)
+            status_code = res.status_code
 
     def get_currency_pairs(self):
         raw_ids = get(
