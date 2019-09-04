@@ -2,6 +2,9 @@ from RobinhoodClient import RobinhoodClient
 
 client = RobinhoodClient()
 
+#Test login
+print(client.login())
+
 #Test get prices
 print(client.get_currency_price("BTC"))
 
