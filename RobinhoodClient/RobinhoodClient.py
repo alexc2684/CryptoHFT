@@ -48,53 +48,11 @@ class RobinhoodClient:
                 self.AUTH_TOKEN = auth_data['auth_token']
                 self.DEVICE_TOKEN = auth_data['device_token']
                 self.REFRESH_TOKEN = auth_data['refresh_token']
-                self.DEFAULT_HEADERS['Authorization'] = 'Bearer {}'.format(self.AUTH_TOKEN)
                 print("Client loaded from previous sign in")
         except:
             print("No user found, new sign in required")
             client.login(username = self.USERNAME, password = self.PASSWORD, challenge_type = 'sms')
             self.save_auth_data(client)
-    """
-    def login(self):
-        status_code = 400
-        while status_code != 200:
-            headers = {
-                    **self.DEFAULT_HEADERS,
-                    **self.LOGIN_HEADERS
-                    }
-
-            data = {
-                    'client_id': self.CLIENT_ID,
-                    'device_token': self.DEVICE_TOKEN,
-                    'expires_in': 86400,
-                    'grant_type': 'password',
-                    'username': self.USERNAME,
-                    'password': self.PASSWORD,
-                    'scope': 'internal',
-                    'challenge_type': 'sms'
-                    }
-
-
-            res = post(self.RH_API_URL + 'oauth2/token/', headers = headers, data = json.dumps(data))
-            data = json.loads(res.content)
-            print(data)
-            print(headers)
-            print("\n")
-            if res.status_code == 200:
-                status_code = 200
-            elif res.status_code == 400:
-                challenge_id = data['challenge']['id']
-                self.login_challenge(challenge_id)
-
-        print(data)
-
-        if 'access_token' in data.keys() and 'refresh_token' in data.keys():
-            self.AUTH_TOKEN = data['access_token']
-            self.REFRESH_TOKEN = data['refresh_token']
-            print(self.AUTH_TOKEN)
-
-        return True
-    """
 
     def place_order(self, symbol, quantity, price, order_type):
         # validate symbol is in currency_pair
@@ -119,7 +77,10 @@ class RobinhoodClient:
             "time_in_force": "gtc"
         }
 
-        res = post(self.RH_CRYPTO_URL + "orders/", headers=headers, data=data)
+        res = post(self.RH_CRYPTO_URL + "orders/", headers=headers, data=json.dumps(data))
+        print("SHOWING RESULTS")
+        print(res)
+        print(res.status_code)
         print(res.content)
 
     def place_buy_order(self, symbol, quantity, price):
