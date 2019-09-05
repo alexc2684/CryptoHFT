@@ -8,7 +8,6 @@ from Robinhood import Robinhood
 
 class RobinhoodClient:
     DEFAULT_HEADERS = {
-        # 'X-TimeZone-Id': 'America/Los_Angeles',
         'Content-Type': 'application/json',
         'Sec-Fetch-Mode': 'cors',
         'Referer': 'https://robinhood.com',
@@ -55,7 +54,6 @@ class RobinhoodClient:
             self.save_auth_data(client)
 
     def place_order(self, symbol, quantity, price, order_type):
-        # validate symbol is in currency_pair
         assert symbol in self.currency_pairs
         assert order_type in ['buy', 'sell']
 
@@ -78,10 +76,14 @@ class RobinhoodClient:
         }
 
         res = post(self.RH_CRYPTO_URL + "orders/", headers=headers, data=json.dumps(data))
-        print("SHOWING RESULTS")
-        print(res)
-        print(res.status_code)
-        print(res.content)
+
+        if res.status_code == 200:
+            print("Order successfully placed")
+            print(res.content)
+            return True
+        else:
+            print("Error while placing order")
+            return False
 
     def place_buy_order(self, symbol, quantity, price):
         self.place_order(symbol, quantity, price, 'buy')
@@ -115,38 +117,6 @@ class RobinhoodClient:
         auth_data['refresh_token'] = client.refresh_token
         self.REFRESH_TOKEN = client.refresh_token
         open('auth.secret', 'w').write(json.dumps(auth_data))
-
-    def generate_device_token(self):
-        rands = []
-        for i in range(0,16):
-            r = random.random()
-            rand = 4294967296.0 * r
-            rands.append((int(rand) >> ((3 & i) << 3)) & 255)
-
-        hexa = []
-        for i in range(0,256):
-            hexa.append(str(hex(i+256)).lstrip("0x").rstrip("L")[1:])
-
-        id = ""
-        for i in range(0,16):
-            id += hexa[rands[i]]
-
-            if (i == 3) or (i == 5) or (i == 7) or (i == 9):
-                id += "-"
-
-        self.DEVICE_TOKEN = id
-
-    def login_challenge(self, challenge_id):
-        status_code = 404
-        while status_code != 200:
-            print("2FA Required. Input 6 digit code.")
-            sms_code = input()
-            challenge_data = {'response': sms_code}
-            self.DEFAULT_HEADERS['X-ROBINHOOD-CHALLENGE-RESPONSE-ID'] = challenge_id
-            self.DEFAULT_HEADERS['Content-Type'] = 'application/x-www-form-urlencoded'
-            challenge_endpoint = self.RH_API_URL + 'challenge/{}/respond/'.format(challenge_id)
-            res = post(challenge_endpoint, data = challenge_data)
-            status_code = res.status_code
 
     def get_currency_pairs(self):
         raw_ids = get(

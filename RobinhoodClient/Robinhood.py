@@ -199,7 +199,7 @@ class Robinhood:
                 self.headers["X-ROBINHOOD-CHALLENGE-RESPONSE-ID"] = self.challenge_id #has to add this to stay logged in
                 sms_challenge_endpoint = "https://api.robinhood.com/challenge/{}/respond/".format(self.challenge_id)
                 print("No 2FA Given")
-                print(challenge_type + " code:")
+                print("Enter code:")
                 self.sms_code = input()
                 challenge_res = {"response":self.sms_code}
                 res2 = self.session.post(sms_challenge_endpoint, data=challenge_res, timeout=15)
