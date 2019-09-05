@@ -22,7 +22,8 @@ class RobinhoodClient:
 
     USERNAME = os.environ['RH_USERNAME']
     PASSWORD = os.environ['RH_PASSWORD']
-    AUTH_TOKEN = os.environ['RH_TOKEN']
+    DEVICE_TOKEN = ""
+    AUTH_TOKEN = ""
     REFRESH_TOKEN = ""
 
     RH_API_URL = "https://api.robinhood.com/"
@@ -30,7 +31,6 @@ class RobinhoodClient:
 
     ACCOUNT_ID = "cc0342b5-9765-437d-97f6-e8942ab3ebc5"  # TODO: Don't hard code this
     CLIENT_ID = "c82SH0WZOsabOXGP2sxqcj34FxkvfnWRZBKlBjFS"
-    DEVICE_TOKEN = ""
 
     currency_pairs = {}
 
@@ -40,8 +40,20 @@ class RobinhoodClient:
 
     def login(self):
         client = Robinhood()
-        client.login(username = self.USERNAME, password = self.PASSWORD, challenge_type = 'sms')
-        self.save_auth_data(client)
+        try:
+            data = open('auth.secret', 'r').read()
+            print(data)
+            auth_data = json.loads(data)
+            if "auth_token" in auth_data:
+                self.AUTH_TOKEN = auth_data['auth_token']
+                self.DEVICE_TOKEN = auth_data['device_token']
+                self.REFRESH_TOKEN = auth_data['refresh_token']
+                self.DEFAULT_HEADERS['Authorization'] = 'Bearer {}'.format(self.AUTH_TOKEN)
+                print("Client loaded from previous sign in")
+        except:
+            print("No user found, new sign in required")
+            client.login(username = self.USERNAME, password = self.PASSWORD, challenge_type = 'sms')
+            self.save_auth_data(client)
     """
     def login(self):
         status_code = 400
@@ -136,8 +148,11 @@ class RobinhoodClient:
     def save_auth_data(self, client):
         auth_data = {}
         auth_data['device_token'] = client.device_token
+        self.DEVICE_TOKEN = client.device_token
         auth_data['auth_token'] = client.auth_token
+        self.AUTH_TOKEN = client.auth_token
         auth_data['refresh_token'] = client.refresh_token
+        self.REFRESH_TOKEN = client.refresh_token
         open('auth.secret', 'w').write(json.dumps(auth_data))
 
     def generate_device_token(self):
