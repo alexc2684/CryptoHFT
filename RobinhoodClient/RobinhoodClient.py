@@ -6,6 +6,7 @@ from uuid import uuid4
 
 from Robinhood import Robinhood
 
+
 class RobinhoodClient:
     DEFAULT_HEADERS = {
         'Content-Type': 'application/json',
@@ -14,10 +15,10 @@ class RobinhoodClient:
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36'}
 
     LOGIN_HEADERS = {
-            'X-Robinhood-API-Version': '1.280.0',
-            'Referer': 'https://robinhood.com/',
-            'Origin': 'https://robinhood.com',
-            }
+        'X-Robinhood-API-Version': '1.280.0',
+        'Referer': 'https://robinhood.com/',
+        'Origin': 'https://robinhood.com',
+    }
 
     USERNAME = os.environ['RH_USERNAME']
     PASSWORD = os.environ['RH_PASSWORD']
@@ -48,9 +49,12 @@ class RobinhoodClient:
                 self.DEVICE_TOKEN = auth_data['device_token']
                 self.REFRESH_TOKEN = auth_data['refresh_token']
                 print("Client loaded from previous sign in")
-        except:
+        except BaseException:
             print("No user found, new sign in required")
-            client.login(username = self.USERNAME, password = self.PASSWORD, challenge_type = 'sms')
+            client.login(
+                username=self.USERNAME,
+                password=self.PASSWORD,
+                challenge_type='sms')
             self.save_auth_data(client)
 
     def place_order(self, symbol, quantity, price, order_type):
@@ -75,7 +79,11 @@ class RobinhoodClient:
             "time_in_force": "gtc"
         }
 
-        res = post(self.RH_CRYPTO_URL + "orders/", headers=headers, data=json.dumps(data))
+        res = post(
+            self.RH_CRYPTO_URL +
+            "orders/",
+            headers=headers,
+            data=json.dumps(data))
 
         if res.status_code == 200:
             print("Order successfully placed")
@@ -83,6 +91,8 @@ class RobinhoodClient:
             return True
         else:
             print("Error while placing order")
+            print("Status code: {}".format(res.status_code))
+            print(res.content)
             return False
 
     def place_buy_order(self, symbol, quantity, price):
@@ -104,8 +114,10 @@ class RobinhoodClient:
             "marketdata/forex/quotes/{}/".format(
                 self.currency_pairs[symbol]),
             headers=headers)
+
         content = json.loads(res.content)
-        return content['mark_price']
+        price = float(content['mark_price'])
+        return price
 
     # Utils
     def save_auth_data(self, client):
