@@ -12,8 +12,11 @@ class AutoTrader:
         self.symbol = symbol
 
     def start_auto_trade(self):
-        # init push queue
+        # while true
+        # wait for socket
+        # push data to queue
         # each time push executes, hit make_trade
+        # ***must be synchronous, unless we lock queue
         pass
 
     def make_trade(self, curr_price):
