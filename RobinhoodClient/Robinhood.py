@@ -20,8 +20,8 @@ import random
 import hmac, base64, struct, hashlib
 
 #Application-specific imports
-import exceptions as RH_exception
-import endpoints
+import RobinhoodClient.exceptions as RH_exception
+import RobinhoodClient.endpoints as endpoints
 
 class Bounds(Enum):
     """Enum for bounds in `historicals` endpoint """

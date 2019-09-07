@@ -1,4 +1,4 @@
-from RobinhoodClient import RobinhoodClient
+from RobinhoodClient.RobinhoodClient import RobinhoodClient
 
 client = RobinhoodClient()
 
