@@ -37,6 +37,7 @@ class RobinhoodClient:
     def __init__(self):
         self.get_currency_pairs()
         self.client = Robinhood()
+        self.login()
 
     def login(self):
         try:
