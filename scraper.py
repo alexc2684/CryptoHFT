@@ -67,7 +67,7 @@ def get_curr_data(args):
         results = requests.get(url, headers=headers).json()
     except:
         client.refresh_login()
-        headers['Authorization'] = 'Bearer {0}'.format(client.get_autb_token())
+        headers['Authorization'] = 'Bearer {0}'.format(client.get_auth_token())
         results = requests.get(url, headers = headers).json()
     results['_time'] = req_time
     return results
