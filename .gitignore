@@ -1,3 +1,4 @@
 *.secret
 *.csv
 venv/
+*.pem

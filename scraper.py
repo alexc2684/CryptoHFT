@@ -6,8 +6,11 @@ import csv
 import logging
 import multiprocessing
 import os
+import sys
 import requests
 import time
+import json
+from RobinhoodClient.RobinhoodClient import RobinhoodClient
 
 parser = argparse.ArgumentParser(description='Scrape robinhood data.')
 parser.add_argument('--token-file', type=str, required=True,
@@ -34,12 +37,12 @@ class CurrencyPairs(object):
     """
     House info about all the coins we are watching
     """
-    
+
     def __init__(self):
         self.pairs = SCRAPE_CURRENCIES
         self.pairs_to_ids = dict()
         self.update_pairs_to_ids()
-    
+
     def update_pairs_to_ids(self):
         url = 'https://nummus.robinhood.com/currency_pairs/'
         headers = {**DEFAULT_HEADERS}
@@ -48,19 +51,24 @@ class CurrencyPairs(object):
         for pair in all_currency_pairs:
             if pair['symbol'] in self.pairs:
                 self.pairs_to_ids[pair['symbol']] = pair["id"]
-    
+
     def __str__(self):
         return str(self.pairs_to_ids)
-    
+
 def get_curr_data(args):
-    currency_pair_id, auth_token = args 
+    currency_pair_id, auth_token = args
     url = "https://api.robinhood.com/marketdata/forex/quotes/{0}/".format(currency_pair_id)
     headers = {
         **DEFAULT_HEADERS,
         'Authorization': 'Bearer {0}'.format(auth_token)
     }
     req_time = time.time()
-    results = requests.get(url, headers=headers).json()
+    try:
+        results = requests.get(url, headers=headers).json()
+    except:
+        client.refresh_login()
+        headers['Authorization'] = 'Bearer {0}'.format(client.get_auth_token())
+        results = requests.get(url, headers = headers).json()
     results['_time'] = req_time
     return results
 
@@ -89,6 +97,8 @@ def save_metrics_to_csv(args):
 
 def main(args):
     logging.info("Starting scraping with the following options:")
+    client = RobinhoodClient()
+    client.login()
     args_dict = vars(args)
     for arg_name in args_dict:
         logging.info("{0} = {1}".format(arg_name, args_dict[arg_name]))
@@ -98,7 +108,8 @@ def main(args):
     pool_write = multiprocessing.Pool(10)
 
     with open(args.token_file, 'r') as tf:
-            auth_token = tf.readline()
+            data = json.loads(tf.read())
+            auth_token = data['auth_token']
 
     is_first_loop = True
     while True:
@@ -133,7 +144,7 @@ def main(args):
                 logging.warning("current time = {0}".format(time.time()))
             else:
                 time.sleep(sleep_time)
-        except Exception (e):
+        except Exception as e:
             logging.error("------- Exception -------")
             logging.error(str(e))
 
@@ -145,4 +156,6 @@ def main(args):
 if __name__ == "__main__":
     args = parser.parse_args()
     logging.basicConfig(level=args.log_level.upper())
+    client = RobinhoodClient()
+    client.login()
     main(args)

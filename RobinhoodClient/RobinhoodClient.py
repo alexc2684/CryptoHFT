@@ -4,7 +4,7 @@ import os
 from requests import get, post
 from uuid import uuid4
 
-from Robinhood import Robinhood
+from RobinhoodClient.Robinhood import Robinhood
 
 
 class RobinhoodClient:
@@ -36,10 +36,10 @@ class RobinhoodClient:
 
     def __init__(self):
         self.get_currency_pairs()
-        self.generate_device_token()
+        self.client = Robinhood()
+        self.login()
 
     def login(self):
-        client = Robinhood()
         try:
             data = open('auth.secret', 'r').read()
             print(data)
@@ -51,11 +51,15 @@ class RobinhoodClient:
                 print("Client loaded from previous sign in")
         except BaseException:
             print("No user found, new sign in required")
-            client.login(
+            self.client.login(
                 username=self.USERNAME,
                 password=self.PASSWORD,
                 challenge_type='sms')
-            self.save_auth_data(client)
+            self.save_auth_data(self.client)
+
+    def refresh_login(self):
+        self.client.relogin_oauth2()
+        self.save_auth_data(self.client)
 
     def place_order(self, symbol, quantity, price, order_type):
         assert symbol in self.currency_pairs
@@ -118,6 +122,9 @@ class RobinhoodClient:
         content = json.loads(res.content)
         price = float(content['mark_price'])
         return price
+
+    def get_auth_token(self):
+        return self.AUTH_TOKEN
 
     # Utils
     def save_auth_data(self, client):
