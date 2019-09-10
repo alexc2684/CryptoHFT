@@ -10,6 +10,8 @@ import sys
 import requests
 import time
 import json
+import asyncio
+import websockets
 from RobinhoodClient.RobinhoodClient import RobinhoodClient
 
 parser = argparse.ArgumentParser(description='Scrape robinhood data.')
@@ -95,6 +97,12 @@ def save_metrics_to_csv(args):
         writer = csv.DictWriter(f, metrics.keys())
         writer.writerow(metrics)
 
+async def send_price_data(prices):
+     uri = "ws://localhost:8765"
+     async with websockets.connect(uri) as websocket:
+         await websocket.send(prices)
+         await websocket.recv()
+
 def main(args):
     logging.info("Starting scraping with the following options:")
     client = RobinhoodClient()
@@ -130,6 +138,10 @@ def main(args):
             for pair_data in all_pair_data:
                 filename = args.output_file_fmt.format(pair_data['symbol'])
                 all_parallel_args.append([filename, pair_data, is_first_loop])
+                ask_price = pair_data['ask_price']
+                bid_price = pair_data['bid_price']
+                asyncio.get_event_loop().run_until_complete(send_price_data('{} {}'.format(ask_price, bid_price)))
+
             pool_write.map_async(save_metrics_to_csv, all_parallel_args)
             is_first_loop = False
 
