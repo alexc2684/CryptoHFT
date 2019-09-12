@@ -89,7 +89,7 @@ class RobinhoodClient:
             headers=headers,
             data=json.dumps(data))
 
-        if res.status_code == 200:
+        if res.status_code == 201:
             print("Order successfully placed")
             print(res.content)
             return True

@@ -140,7 +140,8 @@ def main(args):
                 all_parallel_args.append([filename, pair_data, is_first_loop])
                 ask_price = pair_data['ask_price']
                 bid_price = pair_data['bid_price']
-                asyncio.get_event_loop().run_until_complete(send_price_data('{} {}'.format(bid_price, ask_price)))
+                mark_price = pair_data['mark_price']
+                asyncio.get_event_loop().run_until_complete(send_price_data('{} {} {} {}'.format(bid_price, ask_price, mark_price, start_time)))
 
             pool_write.map_async(save_metrics_to_csv, all_parallel_args)
             is_first_loop = False
