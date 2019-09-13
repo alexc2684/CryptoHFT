@@ -15,14 +15,14 @@ class SMA:
         ask_price = ask_queue[len(ask_queue)-1]
         if self.state:
             avg = sum(bid_queue)/len(bid_queue)
-            print("BUY AVG: {} PRICE: {}".format(avg, bid_price))
             if avg - self.price_range > bid_price:
+                print("BUY AVG: {} PRICE: {}".format(avg, bid_price))
                 self.state = not self.state
                 self.buy_price = round(bid_price + 1, 2)
                 return [1, self.buy_price]
         elif not self.state:
-            print("PRICE TO SELL AT: {} PRICE: {}".format(self.buy_price + self.price_range, ask_price))
             if ask_price > self.buy_price + self.price_range or ask_price < self.buy_price - self.stop_limit:
+                print("PRICE TO SELL AT: {} PRICE: {}".format(self.buy_price + self.price_range, ask_price))
                 self.state = not self.state
                 return [0, round(ask_price - 1, 2)]
         return [2, 0]

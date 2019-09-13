@@ -1,6 +1,6 @@
 from AutoTrader import AutoTrader
-from Strategy.SMA_Strategy import SMA
+from Strategy.MeanReversion import MeanReversion
 
-strategy = SMA(1, 10, 100)
-a = AutoTrader(strategy, .001, "BTC", "history.csv",  1200)
+strategy = MeanReversion(1, 10, 100, 60)
+a = AutoTrader(strategy, .001, "BTC", "history.csv",  180)
 a.start_auto_trade()
