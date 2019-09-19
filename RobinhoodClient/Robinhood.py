@@ -13,6 +13,7 @@ from six.moves import input
 
 import getpass
 import requests
+import json
 import six
 import dateutil
 import time
@@ -121,11 +122,13 @@ class Robinhood:
             "expires_in": 86400,
         }
         res = self.session.post(url, data=data)
-        res = res.json()
-        self.auth_token   = res["access_token"]
+        res = json.loads(res.content)
+        print(type(res))
+        print(res['detail'])
+        self.auth_token   = res["auth_token"]
         self.refresh_token  = res["refresh_token"]
-        self.mfa_code       = res["mfa_code"]
-        self.scope          = res["scope"]
+        #self.mfa_code       = res["mfa_code"]
+        #self.scope          = res["scope"]
 
     def login(self,
               username,
