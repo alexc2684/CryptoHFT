@@ -1,4 +1,5 @@
 import json
+import csv
 import emoji
 import numpy as np
 import asyncio
@@ -28,8 +29,10 @@ class AutoTrader:
     async def get_pricing_data(self, websocket, path):
         async for message in websocket:
             await websocket.send(message)
-            data = list(map(float, message.split(' ')))
-            self.process_data(data[1], data[0], data[2], data[3], data[4])
+            data = message.split(' ')
+            prices = list(map(float, data[:4]))
+            refresh = data[4]
+            self.process_data(prices[1], prices[0], prices[2], prices[3], refresh)
 
     def process_data(self, bid_price, ask_price, mark_price, time, refresh):
         self.bid_queue.append(bid_price)
