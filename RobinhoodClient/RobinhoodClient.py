@@ -55,7 +55,7 @@ class RobinhoodClient:
                 username=self.USERNAME,
                 password=self.PASSWORD,
                 challenge_type='sms')
-            self.save_auth_data(self.client)
+            self.save_auth_data(self.client, True)
 
     def refresh_login(self):
         self.client.relogin_oauth2()

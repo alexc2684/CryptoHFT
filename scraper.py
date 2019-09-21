@@ -67,11 +67,12 @@ def get_curr_data(args):
     req_time = time.time()
     try:
         results = requests.get(url, headers=headers).json()
+        results['refresh'] = False
     except:
         client.refresh_login()
-        refresh = True
         headers['Authorization'] = 'Bearer {0}'.format(client.get_auth_token()) #TODO: put all requests in RobinhoodClient
         results = requests.get(url, headers=headers).json()
+        results['refresh'] = True
     results['_time'] = req_time
     return results
 
@@ -141,10 +142,8 @@ def main(args):
                 ask_price = pair_data['ask_price']
                 bid_price = pair_data['bid_price']
                 mark_price = pair_data['mark_price']
+                refresh = pair_data['refresh']
                 asyncio.get_event_loop().run_until_complete(send_price_data('{} {} {} {} {}'.format(bid_price, ask_price, mark_price, start_time, refresh)))
-                if refresh:
-                    refresh = not refresh
-
             pool_write.map_async(save_metrics_to_csv, all_parallel_args)
             is_first_loop = False
 
@@ -173,5 +172,4 @@ if __name__ == "__main__":
     logging.basicConfig(level=args.log_level.upper())
     client = RobinhoodClient()
     client.login()
-    refresh = False
     main(args)
