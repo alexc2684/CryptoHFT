@@ -68,7 +68,7 @@ def get_curr_data(args):
     try:
         results = requests.get(url, headers=headers).json()
     except:
-        client.refresh_login()
+        client.refresh_login(True)
         refresh = True
         headers['Authorization'] = 'Bearer {0}'.format(client.get_auth_token()) #TODO: put all requests in RobinhoodClient
         results = requests.get(url, headers=headers).json()

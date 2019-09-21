@@ -55,11 +55,11 @@ class RobinhoodClient:
                 username=self.USERNAME,
                 password=self.PASSWORD,
                 challenge_type='sms')
-            self.save_auth_data(self.client)
+            self.save_auth_data(True)
 
-    def refresh_login(self):
+    def refresh_login(self, refresh):
         self.client.relogin_oauth2()
-        self.save_auth_data(self.client, False)
+        self.save_auth_data(self.client, refresh)
 
     def place_order(self, symbol, quantity, price, order_type):
         assert symbol in self.currency_pairs
