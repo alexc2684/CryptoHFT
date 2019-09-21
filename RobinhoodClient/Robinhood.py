@@ -14,7 +14,7 @@ from six.moves import input
 import getpass
 import requests
 import json
-import six
+import os
 import dateutil
 import time
 import random
@@ -45,6 +45,7 @@ class Robinhood:
     headers = None
     auth_token = None
     refresh_token = None
+    device_token = None
 
     logger = logging.getLogger('Robinhood')
     logger.addHandler(logging.NullHandler())
@@ -70,6 +71,16 @@ class Robinhood:
         self.session.headers = self.headers
         self.device_token = ""
         self.challenge_id = ""
+        if "auth.secret" in os.listdir('.'):
+            data = open("auth.secret", "r").read()
+            auth_data = json.loads(data)
+            if "auth_token" in auth_data:
+                self.auth_token = auth_data['auth_token']
+                self.device_token = auth_data['device_token']
+                self.refresh_token = auth_data['refresh_token']
+
+
+
 
     def login_required(function):  # pylint: disable=E0213
         """ Decorator function that prompts user for login if they are not logged in already. Can be applied to any function using the @ notation. """
@@ -112,6 +123,7 @@ class Robinhood:
         '''
         (Re)login using the Oauth2 refresh token
         '''
+        print("Token refreshed, relogging in")
         url = "https://api.robinhood.com/oauth2/token/"
         data = {
             "client_id": self.client_id,
@@ -122,13 +134,17 @@ class Robinhood:
             "expires_in": 86400,
         }
         res = self.session.post(url, data=data)
-        res = json.loads(res.content)
-        print(type(res))
-        print(res['detail'])
-        self.auth_token   = res["auth_token"]
-        self.refresh_token  = res["refresh_token"]
-        #self.mfa_code       = res["mfa_code"]
-        #self.scope          = res["scope"]
+        if res.status_code == 200:
+            print("Successful relogin")
+            res = json.loads(res.content)
+            self.auth_token   = res["access_token"]
+            self.refresh_token  = res["refresh_token"]
+            #self.mfa_code       = res["mfa_code"]
+            #self.scope          = res["scope"]
+        else:
+            res = json.loads(res.content)
+            print("Error while refreshing login")
+            print(res['error'])
 
     def login(self,
               username,
@@ -192,6 +208,7 @@ class Robinhood:
                 res_data = res.json()
 
                 if 'access_token' in res_data.keys() and 'refresh_token' in res_data.keys():
+                    print(res_data)
                     self.auth_token = res_data['access_token']
                     self.refresh_token = res_data['refresh_token']
                     self.headers['Authorization'] = 'Bearer ' + self.auth_token

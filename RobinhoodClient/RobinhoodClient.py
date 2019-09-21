@@ -37,13 +37,13 @@ class RobinhoodClient:
     def __init__(self):
         self.get_currency_pairs()
         self.client = Robinhood()
-        self.login()
 
     def login(self):
         try:
             data = open('auth.secret', 'r').read()
-            print(data)
+            # print(data)
             auth_data = json.loads(data)
+            # print(auth_data)
             if "auth_token" in auth_data:
                 self.AUTH_TOKEN = auth_data['auth_token']
                 self.DEVICE_TOKEN = auth_data['device_token']
