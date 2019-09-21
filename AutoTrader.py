@@ -20,7 +20,14 @@ class AutoTrader:
         self.symbol = symbol
         self.history_filename = history_filename
         self.max_queue_size = max_queue_size
+        self.load_lights()
 
+    def load_lights(self):
+        data = open("lights.secret", "r").read()
+        data = json.loads(data)
+        self.LIGHT1_IP = data['LIGHT1_IP']
+        self.PHILLIPS_USER = data['PHILIPS_USER']
+        
     def start_auto_trade(self):
         start_server = websockets.serve(self.get_pricing_data, "localhost", 8765)
         asyncio.get_event_loop().run_until_complete(start_server)
@@ -70,4 +77,5 @@ class AutoTrader:
         else: #Action == HOLD
             print("HOLD at {} at time {}".format(str(mark_price), time))
             pass
+        
         self.write_history(bid_queue[len(bid_queue)-1], ask_queue[len(ask_queue)-1], mark_price, self.ORDER_TYPES[action])
