@@ -47,7 +47,7 @@ class AutoTrader:
         print("BID {} SELL {}".format(bid_price, ask_price))
 
         if refresh == "True":
-            self.client.refresh_login()
+            self.client.refresh_login(False)
 
         if len(self.bid_queue) > self.max_queue_size:
             self.bid_queue.popleft()
