@@ -29,17 +29,20 @@ class AutoTrader:
         async for message in websocket:
             await websocket.send(message)
             data = list(map(float, message.split(' ')))
-            self.process_data(data[1], data[0], data[2], data[3])
+            self.process_data(data[1], data[0], data[2], data[3], data[4])
 
-    def process_data(self, bid_price, ask_price, mark_price, time):
+    def process_data(self, bid_price, ask_price, mark_price, time, refresh):
         self.bid_queue.append(bid_price)
         self.ask_queue.append(ask_price)
         print("BID {} SELL {}".format(bid_price, ask_price))
 
+        if refresh == "True":
+            self.client.refresh_login()
+
         if len(self.bid_queue) > self.max_queue_size:
             self.bid_queue.popleft()
             self.ask_queue.popleft()
-            action = self.make_trade(self.bid_queue, self.ask_queue, mark_price, time)
+            self.make_trade(self.bid_queue, self.ask_queue, mark_price, time)
         elif len(self.bid_queue) % 20 == 0:
             print((self.max_queue_size - len(self.bid_queue))/self.max_queue_size) 
         if len(self.bid_queue) == self.max_queue_size - 1:

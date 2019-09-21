@@ -59,7 +59,7 @@ class RobinhoodClient:
 
     def refresh_login(self):
         self.client.relogin_oauth2()
-        self.save_auth_data(self.client)
+        self.save_auth_data(self.client, False)
 
     def place_order(self, symbol, quantity, price, order_type):
         assert symbol in self.currency_pairs
@@ -127,7 +127,7 @@ class RobinhoodClient:
         return self.AUTH_TOKEN
 
     # Utils
-    def save_auth_data(self, client):
+    def save_auth_data(self, client, write):
         auth_data = {}
         auth_data['device_token'] = client.device_token
         self.DEVICE_TOKEN = client.device_token
@@ -135,7 +135,8 @@ class RobinhoodClient:
         self.AUTH_TOKEN = client.auth_token
         auth_data['refresh_token'] = client.refresh_token
         self.REFRESH_TOKEN = client.refresh_token
-        open('auth.secret', 'w').write(json.dumps(auth_data))
+        if write:
+            open('auth.secret', 'w').write(json.dumps(auth_data))
 
     def get_currency_pairs(self):
         raw_ids = get(
