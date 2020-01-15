@@ -4,7 +4,7 @@ client = RobinhoodClient()
 
 #Test login
 print(client.login())
-#print(client.refresh_login())
+print(client.refresh_login(True))
 
 #Test get prices
 print(client.get_currency_price("BTC"))

@@ -1,6 +1,6 @@
 import json
-import random
 import os
+from time import time
 from requests import get, post
 from uuid import uuid4
 
@@ -20,11 +20,13 @@ class RobinhoodClient:
         'Origin': 'https://robinhood.com',
     }
 
+    AUTH_FILE_PATH = 'auth.secret'
     USERNAME = os.environ['RH_USERNAME']
     PASSWORD = os.environ['RH_PASSWORD']
     DEVICE_TOKEN = ""
     AUTH_TOKEN = ""
     REFRESH_TOKEN = ""
+    EXPIRE_TIME = None
 
     RH_API_URL = "https://api.robinhood.com/"
     RH_CRYPTO_URL = "https://nummus.robinhood.com/"
@@ -39,29 +41,64 @@ class RobinhoodClient:
         self.client = Robinhood()
 
     def login(self):
-        try:
-            data = open('auth.secret', 'r').read()
-            # print(data)
-            auth_data = json.loads(data)
-            # print(auth_data)
-            if "auth_token" in auth_data:
+        auth_data_json = self.read_file(self.AUTH_FILE_PATH)
+        if auth_data_json:
+            auth_data = json.loads(auth_data_json)
+            expire_time = auth_data['expire_time']
+            if self.auth_requires_refresh_token(expire_time):
+                self.refresh_login()
+            else:
                 self.AUTH_TOKEN = auth_data['auth_token']
                 self.DEVICE_TOKEN = auth_data['device_token']
                 self.REFRESH_TOKEN = auth_data['refresh_token']
-                print("Client loaded from previous sign in")
-        except BaseException:
+                self.EXPIRE_TIME = auth_data['expire_time']
+
+        else:
             print("No user found, new sign in required")
             self.client.login(
                 username=self.USERNAME,
                 password=self.PASSWORD,
                 challenge_type='sms')
 
-            self.save_auth_data(self.client, True)
+            self.save_auth_data_from_client(self.client)
 
+    def auth_requires_refresh_token(self, expire_time):
+        return time() > expire_time
 
-    def refresh_login(self, refresh):
+    def read_file(self, filepath) -> (str, None):
+        if self.is_existing_file(filepath):
+            data = open(filepath, 'r').read()
+            return data
+
+    def is_existing_file(self, filepath) -> bool:
+        try:
+            f = open(filepath)
+            f.close()
+            return True
+        except IOError:
+            return False
+
+    def save_auth_data_from_client(self, client):
+        auth_data = {}
+        auth_data['device_token'] = client.device_token
+        self.DEVICE_TOKEN = client.device_token
+        auth_data['auth_token'] = client.auth_token
+        self.AUTH_TOKEN = client.auth_token
+        auth_data['refresh_token'] = client.refresh_token
+        self.REFRESH_TOKEN = client.refresh_token
+        expiration_time = int(time()) + client.expire_time
+        auth_data['expire_time'] = expiration_time
+        self.EXPIRE_TIME = expiration_time
+
+        self.write_json_data_file(self.AUTH_FILE_PATH, auth_data)
+
+    def write_json_data_file(self, filepath, data):
+        with open(filepath, 'w') as f:
+            f.write(json.dumps(data))
+
+    def refresh_login(self):
         self.client.relogin_oauth2()
-        self.save_auth_data(self.client, refresh)
+        self.save_auth_data_from_client(self.client)
 
     def place_order(self, symbol, quantity, price, order_type):
         assert symbol in self.currency_pairs
@@ -127,18 +164,6 @@ class RobinhoodClient:
 
     def get_auth_token(self):
         return self.AUTH_TOKEN
-
-    # Utils
-    def save_auth_data(self, client, write):
-        auth_data = {}
-        auth_data['device_token'] = client.device_token
-        self.DEVICE_TOKEN = client.device_token
-        auth_data['auth_token'] = client.auth_token
-        self.AUTH_TOKEN = client.auth_token
-        auth_data['refresh_token'] = client.refresh_token
-        self.REFRESH_TOKEN = client.refresh_token
-        if write:
-            open('auth.secret', 'w').write(json.dumps(auth_data))
 
     def get_currency_pairs(self):
         raw_ids = get(

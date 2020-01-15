@@ -46,6 +46,7 @@ class Robinhood:
     auth_token = None
     refresh_token = None
     device_token = None
+    expire_time = None
 
     logger = logging.getLogger('Robinhood')
     logger.addHandler(logging.NullHandler())
@@ -127,6 +128,7 @@ class Robinhood:
         url = "https://api.robinhood.com/oauth2/token/"
         data = {
             "client_id": self.client_id,
+            "auth_token": self.auth_token,
             "device_token": self.device_token,
             "grant_type": "refresh_token",
             "refresh_token": self.refresh_token,
@@ -134,17 +136,25 @@ class Robinhood:
             "expires_in": 86400,
         }
         res = self.session.post(url, data=data)
-        if res.status_code == 200:
-            print("Successful relogin")
-            res = json.loads(res.content)
-            self.auth_token   = res["access_token"]
-            self.refresh_token  = res["refresh_token"]
-            #self.mfa_code       = res["mfa_code"]
-            #self.scope          = res["scope"]
-        else:
-            res = json.loads(res.content)
-            print("Error while refreshing login")
-            print(res['error'])
+        data = res.json()
+
+        if 'access_token' in data.keys() and 'refresh_token' in data.keys():
+            self.auth_token = data['access_token']
+            self.refresh_token = data['refresh_token']
+            self.headers['Authorization'] = 'Bearer ' + self.auth_token
+            return True
+
+        # if res.status_code == 200:
+        #     print("Successful relogin")
+        #     res = json.loads(res.content)
+        #     self.auth_token = res["access_token"]
+        #     self.refresh_token = res["refresh_token"]
+        #     #self.mfa_code       = res["mfa_code"]
+        #     #self.scope          = res["scope"]
+        # else:
+        #     res = json.loads(res.content)
+        #     print("Error while refreshing login")
+        #     print(res['error'])
 
     def login(self,
               username,
@@ -228,11 +238,13 @@ class Robinhood:
                 res3 = self.session.post(endpoints.login(), data=payload, timeout=15)
                 res3.raise_for_status()
                 data = res3.json()
+                print(data)
 
                 if 'access_token' in data.keys() and 'refresh_token' in data.keys():
                     self.auth_token = data['access_token']
                     self.refresh_token = data['refresh_token']
                     self.headers['Authorization'] = 'Bearer ' + self.auth_token
+                    self.expire_time = data['expires_in']
                     return True
 
             except requests.exceptions.HTTPError:
