@@ -4,9 +4,6 @@ Robinhood crypto market data scraper
 import argparse
 import csv
 import logging
-import multiprocessing
-import os
-import sys
 import requests
 import time
 import json
@@ -15,14 +12,10 @@ import websockets
 from RobinhoodClient.RobinhoodClient import RobinhoodClient
 
 parser = argparse.ArgumentParser(description='Scrape robinhood data.')
-parser.add_argument('--token-file', type=str, required=True,
-                    help='File that contains the auth access token to use')
-parser.add_argument('--output-file-fmt', type=str, default="output_{0}.csv",
+parser.add_argument('--output-file-fmt', type=str, default="output.csv",
                     help='Output file to use. If the file exists, it will append onto it.')
 parser.add_argument('--sleep-time', type=float, default=1.0,
                     help='Time to sleep between queries.')
-parser.add_argument('--log-level', type=str, choices=['INFO', 'DEBUG', 'WARNING'],
-                    default='INFO', help='Log level.')
 
 SCRAPE_CURRENCIES = [
     'BTC-USD', # Bitcoin
@@ -69,7 +62,7 @@ def get_curr_data(args):
         results = requests.get(url, headers=headers).json()
         results['refresh'] = False
     except:
-        client.refresh_login(True)
+        client.refresh_login()
         refresh = True
         headers['Authorization'] = 'Bearer {0}'.format(client.get_auth_token()) #TODO: put all requests in RobinhoodClient
         results = requests.get(url, headers=headers).json()
@@ -90,13 +83,10 @@ def save_metrics_to_csv(args):
     filename, metrics, write_headers = args
 
     if write_headers:
-        logging.warning("Writing headers and initializing file {0}".format(filename))
-        logging.warning("time = {0}".format(time.time()))
         headers = metrics.keys()
         write_headers(filename, headers)
 
     with open(filename, 'a') as f:
-        logging.info("Saving metrics to {0}".format(filename))
         writer = csv.DictWriter(f, metrics.keys())
         writer.writerow(metrics)
 
@@ -107,21 +97,14 @@ async def send_price_data(prices):
          await websocket.recv()
 
 def main(args):
-    logging.info("Starting scraping with the following options:")
-
     args_dict = vars(args)
-    for arg_name in args_dict:
-        logging.info("{0} = {1}".format(arg_name, args_dict[arg_name]))
-
     currency_pairs = CurrencyPairs()
-    pool = multiprocessing.Pool(10)
-    pool_write = multiprocessing.Pool(10)
 
-    with open(args.token_file, 'r') as tf:
+    with open('auth.secret', 'r') as tf:
             data = json.loads(tf.read())
             auth_token = data['auth_token']
 
-    is_first_loop = True
+    # is_first_loop = True
     while True:
         try:
             start_time = time.time()
@@ -136,41 +119,28 @@ def main(args):
             all_pair_data = map(get_curr_data, all_parallel_args)
 
             # Save to file
-            all_parallel_args = []
+            # all_parallel_args = []
             for pair_data in all_pair_data:
                 filename = args.output_file_fmt.format(pair_data['symbol'])
-                all_parallel_args.append([filename, pair_data, is_first_loop])
+                # all_parallel_args.append([filename, pair_data, is_first_loop])
                 ask_price = pair_data['ask_price']
                 bid_price = pair_data['bid_price']
                 mark_price = pair_data['mark_price']
                 refresh = pair_data['refresh']
                 asyncio.get_event_loop().run_until_complete(send_price_data('{} {} {} {} {}'.format(bid_price, ask_price, mark_price, start_time, refresh)))
-            pool_write.map_async(save_metrics_to_csv, all_parallel_args)
-            is_first_loop = False
+            # is_first_loop = False
 
             # logging.info("Updating currency pairs")
             # currency_pairs.update_pairs_to_ids()
 
             # Sleep the remaining time to sleep only.
             sleep_time = args.sleep_time - (time.time() - start_time)
-            if sleep_time <= 0.0:
-                # Something went wrong
-                logging.warning("sleep_time = {0}".format(sleep_time))
-                logging.warning("current time = {0}".format(time.time()))
-            else:
-                time.sleep(sleep_time)
+            time.sleep(sleep_time)
         except Exception as e:
-            logging.error("------- Exception -------")
-            logging.error(str(e))
-
-    pool.close()
-    pool.join()
-    pool_write.close()
-    pool_write.join()
+            print(str(e))
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    logging.basicConfig(level=args.log_level.upper())
     client = RobinhoodClient()
     client.login()
     main(args)

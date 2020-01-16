@@ -1,9 +1,10 @@
 import json
 import os
 from time import time
-from requests import get, post
+from requests import post
 from uuid import uuid4
 
+from Request import Request
 from RobinhoodClient.Robinhood import Robinhood
 
 
@@ -40,6 +41,7 @@ class RobinhoodClient:
         self.get_currency_pairs()
         self.client = Robinhood()
 
+    #API
     def login(self):
         auth_data_json = self.read_file(self.AUTH_FILE_PATH)
         if auth_data_json:
@@ -62,6 +64,55 @@ class RobinhoodClient:
 
             self.save_auth_data_from_client(self.client)
 
+    def refresh_login(self):
+        self.client.relogin_oauth2()
+        self.save_auth_data_from_client(self.client)
+
+    def place_buy_order(self, symbol, quantity, price):
+        self.place_order(symbol, quantity, price, 'buy')
+
+    def place_sell_order(self, symbol, quantity, price):
+        self.place_order(symbol, quantity, price, 'sell')
+
+    def get_currency_price_data(self, symbol) -> dict:
+        assert symbol in self.currency_pairs
+
+        headers = {
+            **self.DEFAULT_HEADERS,
+            'Authorization': 'Bearer ' + self.AUTH_TOKEN
+        }
+        request_url = self.RH_API_URL + "marketdata/forex/quotes/{}/".format(self.currency_pairs[symbol])
+        request = Request(headers, request_url)
+        response = self.authorized_get_request(request)
+
+        content = json.loads(response.content)
+        price_data = dict(content)
+        price_data['time'] = time()
+        return price_data
+
+    def authorized_get_request(self, request):
+        try:
+            return request.get_request()
+        except:
+            self.refresh_login()
+            return request.get_request()
+
+    def get_currency_pairs(self):
+        headers = self.DEFAULT_HEADERS
+        request_url = self.RH_CRYPTO_URL + 'currency_pairs/'
+        request = Request(headers, request_url)
+        response = request.get_request()
+
+        currency_ids = json.loads(response.content)
+        results = currency_ids['results']
+        for result in results:
+            currency = result['asset_currency']['code']
+            pair_id = result['id']
+            self.currency_pairs[currency] = pair_id
+
+        return self.currency_pairs
+
+    #Util Methods
     def auth_requires_refresh_token(self, expire_time):
         return time() > expire_time
 
@@ -95,10 +146,6 @@ class RobinhoodClient:
     def write_json_data_file(self, filepath, data):
         with open(filepath, 'w') as f:
             f.write(json.dumps(data))
-
-    def refresh_login(self):
-        self.client.relogin_oauth2()
-        self.save_auth_data_from_client(self.client)
 
     def place_order(self, symbol, quantity, price, order_type):
         assert symbol in self.currency_pairs
@@ -137,42 +184,3 @@ class RobinhoodClient:
             print("Status code: {}".format(res.status_code))
             print(res.content)
             return False
-
-    def place_buy_order(self, symbol, quantity, price):
-        self.place_order(symbol, quantity, price, 'buy')
-
-    def place_sell_order(self, symbol, quantity, price):
-        self.place_order(symbol, quantity, price, 'sell')
-
-    def get_currency_price(self, symbol):
-        assert symbol in self.currency_pairs
-
-        headers = {
-            **self.DEFAULT_HEADERS,
-            'Authorization': 'Bearer ' + self.AUTH_TOKEN
-        }
-
-        res = get(
-            self.RH_API_URL +
-            "marketdata/forex/quotes/{}/".format(
-                self.currency_pairs[symbol]),
-            headers=headers)
-
-        content = json.loads(res.content)
-        price = float(content['mark_price'])
-        return price
-
-    def get_auth_token(self):
-        return self.AUTH_TOKEN
-
-    def get_currency_pairs(self):
-        raw_ids = get(
-            self.RH_CRYPTO_URL +
-            'currency_pairs/',
-            headers=self.DEFAULT_HEADERS)
-        currency_ids = json.loads(raw_ids.content)
-        results = currency_ids['results']
-        for result in results:
-            currency = result['asset_currency']['code']
-            pair_id = result['id']
-            self.currency_pairs[currency] = pair_id

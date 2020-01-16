@@ -1,7 +1,4 @@
 import json
-import csv
-import emoji
-import numpy as np
 import asyncio
 import websockets
 from collections import deque
@@ -56,7 +53,7 @@ class AutoTrader:
         elif len(self.bid_queue) % 20 == 0:
             print((self.max_queue_size - len(self.bid_queue))/self.max_queue_size) 
         if len(self.bid_queue) == self.max_queue_size - 1:
-            print(emoji.emojize("LETS SPEND ALL MY MONEY!!!!!!!! :tada: :tada:", use_aliases=True))
+            print("TRADER IS ACTIVE")
             
     def write_history(self, bid_price, ask_price, mark_price, action):
         with open(self.history_filename, 'w') as f:

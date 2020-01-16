@@ -3,3 +3,4 @@
 venv/
 *.pem
 *.pyc
+scraper.py
