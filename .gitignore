@@ -4,3 +4,6 @@ venv/
 *.pem
 *.pyc
 scraper.py
+.idea
+__pycache__
+
