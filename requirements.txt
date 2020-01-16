@@ -3,3 +3,4 @@ six
 python-dateutil
 asyncio
 websockets
+numpy

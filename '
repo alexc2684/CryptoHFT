@@ -14,8 +14,8 @@ class SMA:
         bid_price = bid_queue[len(bid_queue)-1]
         ask_price = ask_queue[len(ask_queue)-1]
         if self.state:
-            print("BUY AVG: {} PRICE: {}".format(avg, bid_price))
             avg = sum(bid_queue)/len(bid_queue)
+            print("BUY AVG: {} PRICE: {}".format(avg, bid_price))
             if avg - self.price_range > bid_price:
                 self.state = not self.state
                 self.buy_price = round(bid_price + 1, 2)
