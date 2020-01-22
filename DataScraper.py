@@ -26,6 +26,9 @@ class DataScraper:
     def run_scraper(self):
         i = 0
         data_queue = []
+
+        print("Starting data collection")
+
         while True:
             start_time = time.time()
             data = self.get_currency_price_data()
@@ -36,6 +39,7 @@ class DataScraper:
             if i % self.queue_size == 0:
                 self.send_currency_price_data(data_queue)
                 data_queue = []
+                print("Sending data to AWS")
 
             self.sleep_remaining_time(start_time)
 
