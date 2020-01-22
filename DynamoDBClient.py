@@ -5,7 +5,7 @@ class DynamoDBClient:
     def __init__(self):
         self.session = boto3.Session(profile_name='crypto')
         self.resource = self.session.resource('dynamodb')
-        self.table = self.resource.Table('bitcoin_price_data_in_seconds')
+        self.table = self.resource.Table('bitcoin_price_data_in_secs')
 
     def batch_write_price_data(self, price_data):
         with self.table.batch_writer() as batch:
