@@ -1,4 +1,5 @@
 import time
+from datetime import datetime
 from DynamoDBClient import DynamoDBClient
 from RobinhoodClient.RobinhoodClient import RobinhoodClient
 
@@ -39,12 +40,13 @@ class DataScraper:
             if i % self.queue_size == 0:
                 self.send_currency_price_data(data_queue)
                 data_queue = []
-                print("Sending data to AWS")
+                print("Sending data to AWS at: {}".format(datetime.now().strftime("%c")))
 
             self.sleep_remaining_time(start_time)
 
 
     def sleep_remaining_time(self, start_time):
         sleep_time = self.price_recording_time_interval - (time.time() - start_time)
-        time.sleep(sleep_time)
+        if sleep_time > 0:
+            time.sleep(sleep_time)
 

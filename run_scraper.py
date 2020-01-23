@@ -2,7 +2,7 @@ from DataScraper import DataScraper
 
 
 def main():
-    scraper = DataScraper(queue_size=100)
+    scraper = DataScraper(queue_size=600)
     scraper.run_scraper()
 
 

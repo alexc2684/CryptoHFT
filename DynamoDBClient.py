@@ -5,12 +5,13 @@ class DynamoDBClient:
     def __init__(self):
         self.session = boto3.Session(profile_name='crypto')
         self.resource = self.session.resource('dynamodb')
-        self.table = self.resource.Table('bitcoin_price_data_in_secs')
+        self.table = self.resource.Table('bitcoin_price_data_in_seconds')
 
     def batch_write_price_data(self, price_data):
         with self.table.batch_writer() as batch:
             for fields in price_data:
                 batch.put_item(Item={
+                    "index":fields['index'],
                     "time": Decimal(fields['time']),
                     "ask_price": Decimal(fields['ask_price']),
                     "bid_price": Decimal(fields['bid_price']),
