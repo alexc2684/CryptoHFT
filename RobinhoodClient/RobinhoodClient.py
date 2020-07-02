@@ -44,16 +44,15 @@ class RobinhoodClient:
     #API
     def login(self):
         auth_data_json = self.read_file(self.AUTH_FILE_PATH)
+        
         if auth_data_json:
             auth_data = json.loads(auth_data_json)
             expire_time = auth_data['expire_time']
+
             if self.auth_requires_refresh_token(expire_time):
                 self.refresh_login()
             else:
-                self.AUTH_TOKEN = auth_data['auth_token']
-                self.DEVICE_TOKEN = auth_data['device_token']
-                self.REFRESH_TOKEN = auth_data['refresh_token']
-                self.EXPIRE_TIME = auth_data['expire_time']
+                self.cache_auth_data(auth_data)
 
         else:
             print("No user found, new sign in required")
@@ -63,6 +62,12 @@ class RobinhoodClient:
                 challenge_type='sms')
 
             self.save_auth_data_from_client(self.client)
+
+    def cache_auth_data(self, auth_data):
+      self.AUTH_TOKEN = auth_data['auth_token']
+      self.DEVICE_TOKEN = auth_data['device_token']
+      self.REFRESH_TOKEN = auth_data['refresh_token']
+      self.EXPIRE_TIME = auth_data['expire_time']
 
     def refresh_login(self):
         self.client.relogin_oauth2()
