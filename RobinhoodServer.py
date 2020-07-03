@@ -27,5 +27,6 @@ def get_price(symbol):
 
 if __name__ == "__main__":
   app.run()
+  client.login()
     
   

@@ -6,7 +6,6 @@ from six.moves.urllib.request import getproxies
 from uuid import uuid4
 
 from Request import Request
-from RobinhoodClient.Robinhood import Robinhood
 from RobinhoodClient.RequestUtils import generateDeviceToken
 from RobinhoodClient.RobinhoodRequests import get_login_tokens, get_refresh_tokens 
 
@@ -42,7 +41,7 @@ class RobinhoodClient:
     def __init__(self):
       self.DEVICE_TOKEN = generateDeviceToken()
       self.session = self.get_session()
-      self.get_currency_pairs()
+      self.currency_pairs = self.get_currency_pairs()
 
     def get_session(self):
       session = requests.session()
@@ -110,10 +109,12 @@ class RobinhoodClient:
             'Authorization': 'Bearer ' + self.AUTH_TOKEN
         }
         request_url = self.RH_API_URL + "marketdata/forex/quotes/{}/".format(self.currency_pairs[symbol])
+        print(headers)
         request = Request(headers, request_url)
         response = self.authorized_get_request(request)
 
-        content = json.loads(response.content)
+        print(response.text)
+        content = json.loads(response.text)
         price_data = dict(content)
         price_data['time'] = time()
         return price_data
