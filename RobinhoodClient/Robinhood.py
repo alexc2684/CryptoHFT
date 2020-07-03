@@ -134,18 +134,6 @@ class Robinhood:
         self.headers['Authorization'] = 'Bearer ' + self.auth_token
         return True
 
-      # if res.status_code == 200:
-      #     print("Successful relogin")
-      #     res = json.loads(res.content)
-      #     self.auth_token = res["access_token"]
-      #     self.refresh_token = res["refresh_token"]
-      #     #self.mfa_code       = res["mfa_code"]
-      #     #self.scope          = res["scope"]
-      # else:
-      #     res = json.loads(res.content)
-      #     print("Error while refreshing login")
-      #     print(res['error'])
-
   def login(self,
             username,
             password,

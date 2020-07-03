@@ -42,7 +42,7 @@ class RobinhoodClient:
       self.DEVICE_TOKEN = generateDeviceToken()
 
       self.get_currency_pairs()
-      self.client = Robinhood()
+      # self.client = Robinhood()
 
     #API
     def login(self):
@@ -69,7 +69,6 @@ class RobinhoodClient:
 
     def cache_auth_data(self, auth_data):
       self.AUTH_TOKEN = auth_data['auth_token']
-      self.DEVICE_TOKEN = auth_data['device_token']
       self.REFRESH_TOKEN = auth_data['refresh_token']
       self.EXPIRE_TIME = auth_data['expire_time']
 
@@ -143,8 +142,6 @@ class RobinhoodClient:
             return True
         except IOError:
             return False
-
-
 
     def write_json_data_file(self, filepath, data):
         with open(filepath, 'w') as f:
