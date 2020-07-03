@@ -1,13 +1,14 @@
 import json
+import requests
 import os
 from time import time
-from requests import post
+from six.moves.urllib.request import getproxies
 from uuid import uuid4
 
 from Request import Request
 from RobinhoodClient.Robinhood import Robinhood
 from RobinhoodClient.RequestUtils import generateDeviceToken
-from RobinhoodClient.RobinhoodRequests import get_login_tokens 
+from RobinhoodClient.RobinhoodRequests import get_login_tokens, get_refresh_tokens 
 
 class RobinhoodClient:
     DEFAULT_HEADERS = {
@@ -40,32 +41,42 @@ class RobinhoodClient:
 
     def __init__(self):
       self.DEVICE_TOKEN = generateDeviceToken()
-
+      self.session = self.get_session()
       self.get_currency_pairs()
-      # self.client = Robinhood()
+
+    def get_session(self):
+      session = requests.session()
+      session.proxies = getproxies()
+      session.headers = {
+        "Accept": "*/*",
+        "Accept-Encoding": "gzip, deflate",
+        "Accept-Language": "en;q=1, fr;q=0.9, de;q=0.8, ja;q=0.7, nl;q=0.6, it;q=0.5",
+        "Content-Type": "application/x-www-form-urlencoded; charset=utf-8",
+        "X-Robinhood-API-Version": "1.0.0",
+        "Connection": "keep-alive",
+        "User-Agent": "Robinhood/823 (iPhone; iOS 7.1.2; Scale/2.00)"
+      }
+      return session
 
     #API
     def login(self):
-        auth_data_json = self.read_file(self.AUTH_FILE_PATH)
-        
-        if auth_data_json:
-            auth_data = json.loads(auth_data_json)
-            expire_time = auth_data['expire_time']
+      auth_data_json = self.read_file(self.AUTH_FILE_PATH)
 
-            if self.auth_requires_refresh_token(expire_time):
-                self.refresh_login()
-            else:
-                self.cache_auth_data(auth_data)
+      if auth_data_json:
+        auth_data = json.loads(auth_data_json)
+        expire_time = auth_data['expire_time']
 
+        if self.auth_requires_refresh_token(expire_time):
+          print("Tokens expired. Fetching refresh tokens")
+          refresh_tokens = get_refresh_tokens(self.session, auth_data)
+          self.save_login_tokens(refresh_tokens)
         else:
-            print("No user found, new sign in required")
-            login_tokens = get_login_tokens(self.USERNAME, self.PASSWORD, self.DEVICE_TOKEN)
-            self.save_login_tokens(login_tokens)
+          self.cache_auth_data(auth_data)
 
-
-    def refresh_login(self):
-        self.client.relogin_oauth2()
-        # self.save_auth_data_from_client(self.client)
+      else:
+        print("No user found, new sign in required")
+        login_tokens = get_login_tokens(self.session, self.USERNAME, self.PASSWORD, self.DEVICE_TOKEN)
+        self.save_login_tokens(login_tokens)
 
     def cache_auth_data(self, auth_data):
       self.AUTH_TOKEN = auth_data['auth_token']
@@ -85,6 +96,9 @@ class RobinhoodClient:
         expiration_time = int(time()) + login_tokens['expires_in']
         auth_data['expire_time'] = expiration_time
         self.EXPIRE_TIME = expiration_time
+
+        auth_data['device_token'] = self.DEVICE_TOKEN
+        auth_data['client_id'] = self.CLIENT_ID
 
         self.write_json_data_file(self.AUTH_FILE_PATH, auth_data)
 
@@ -169,7 +183,7 @@ class RobinhoodClient:
             "time_in_force": "gtc"
         }
 
-        res = post(
+        res = requests.post(
             self.RH_CRYPTO_URL +
             "orders/",
             headers=headers,

@@ -32,7 +32,13 @@ class DataScraper:
 
         while True:
             start_time = time.time()
-            data = self.get_currency_price_data()
+            try:
+              data = self.get_currency_price_data()
+            except Exception as e:
+              print("API Error")
+              print(e)
+              self.client.login()
+
             data["index"] = i
             data_queue.append(data)
             i += 1
@@ -43,7 +49,6 @@ class DataScraper:
                 print("Sending data to AWS at: {}".format(datetime.now().strftime("%c")))
 
             self.sleep_remaining_time(start_time)
-
 
     def sleep_remaining_time(self, start_time):
         sleep_time = self.price_recording_time_interval - (time.time() - start_time)

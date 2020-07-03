@@ -2,12 +2,10 @@ import requests
 import RobinhoodClient.endpoints as endpoints
 import RobinhoodClient.Constants as constants
 
-from six.moves.urllib.request import getproxies
 from six.moves import input
 
-def get_login_tokens(username, password, device_token):
-  session = get_session()
-  payload = get_payload(username, password, device_token)
+def get_login_tokens(session, username, password, device_token):
+  payload = get_login_payload(username, password, device_token)
 
   try:
     response_json = request_login_data_json(session, payload)
@@ -31,21 +29,7 @@ def get_login_tokens(username, password, device_token):
     print("Unknown Error")
     raise e
 
-def get_session():
-  session = requests.session()
-  session.proxies = getproxies()
-  session.headers = {
-      "Accept": "*/*",
-      "Accept-Encoding": "gzip, deflate",
-      "Accept-Language": "en;q=1, fr;q=0.9, de;q=0.8, ja;q=0.7, nl;q=0.6, it;q=0.5",
-      "Content-Type": "application/x-www-form-urlencoded; charset=utf-8",
-      "X-Robinhood-API-Version": "1.0.0",
-      "Connection": "keep-alive",
-      "User-Agent": "Robinhood/823 (iPhone; iOS 7.1.2; Scale/2.00)"
-  }
-  return session
-
-def get_payload(username, password, device_token):
+def get_login_payload(username, password, device_token):
   return {
     'password': password,
     'username': username,
@@ -84,6 +68,30 @@ def request_login_challenge(session, sms_code, challenge_id):
   res = session.post(sms_challenge_endpoint, data=challenge_res, timeout=15)
   res.raise_for_status()
   
+def get_refresh_tokens(session, auth_data):
+  payload = get_refresh_payload(auth_data)
+
+  try:
+    response_json = request_login_data_json(session, payload)
+    return get_login_response_data(response_json)
+
+  except requests.exceptions.HTTPError:
+    print("ERROR: Login failed")
+    raise requests.exceptions.HTTPError
+  except Exception as e:
+    print("Unknown Error")
+    raise e
+
+def get_refresh_payload(auth_data):
+  return {
+          "client_id": auth_data['client_id'],
+          "auth_token": auth_data['auth_token'],
+          "device_token": auth_data['device_token'],
+          "grant_type": "refresh_token",
+          "refresh_token": auth_data['refresh_token'],
+          "scope": "internal",
+          "expires_in": 86400,
+      }
 
 def get_sms_code():
   print("No 2FA Given")
