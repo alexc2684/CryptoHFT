@@ -17,13 +17,6 @@ class AutoTrader:
         self.symbol = symbol
         self.history_filename = history_filename
         self.max_queue_size = max_queue_size
-        self.load_lights()
-
-    def load_lights(self):
-        data = open("lights.secret", "r").read()
-        data = json.loads(data)
-        self.LIGHT1_IP = data['LIGHT1_IP']
-        self.PHILLIPS_USER = data['PHILIPS_USER']
         
     def start_auto_trade(self):
         start_server = websockets.serve(self.get_pricing_data, "localhost", 8765)
@@ -66,11 +59,11 @@ class AutoTrader:
         if self.ORDER_TYPES[action] == "BUY":
             print("BUYING {} {} AT ${}".format(self.symbol, str(self.quantity), str(price)))
             print("\n")
-            self.client.place_buy_order(self.symbol, self.quantity, price)
+            self.client.place_order(self.symbol, self.quantity, price, "buy")
         elif self.ORDER_TYPES[action] == "SELL":
             print("SELLING {} {} AT ${}".format(self.quantity, str(self.symbol), str(price)))
             print("\n")
-            self.client.place_sell_order(self.symbol, self.quantity, price)
+            self.client.place_order(self.symbol, self.quantity, price, "sell")
         else: #Action == HOLD
             print("HOLD at {} at time {}".format(str(mark_price), time))
             pass
