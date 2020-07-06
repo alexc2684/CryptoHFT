@@ -1,9 +1,9 @@
 import json
 
+from app import app
 from flask import Flask, make_response
 from RobinhoodClient.RobinhoodClient import RobinhoodClient
 
-app = Flask(__name__)
 client = RobinhoodClient()
 
 headers = {"Content-Type": "application/json"}
@@ -34,10 +34,3 @@ def make_success_response(data="Success"):
     )
   response.headers = headers
   return response
-
-## Run app
-
-if __name__ == "__main__":
-  app.run()
-    
-  
