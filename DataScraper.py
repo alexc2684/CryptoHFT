@@ -8,12 +8,13 @@ from DynamoDBClient import DynamoDBClient
 from RobinhoodClient.RobinhoodClient import RobinhoodClient
 
 class DataScraper:
-    server_url = os.getenv("SERVER_URL")
+    server_url = None
 
     def __init__(self, price_recording_time_interval=1.0, asset_name='BTC', queue_size=100):
       self.price_recording_time_interval = price_recording_time_interval
       self.asset_name = asset_name
       self.queue_size = queue_size
+      self.server_url = get_server_url()
 
       response = requests.get(self.server_url + '/currencies')
       currency_pairs = dict(json.loads(response.text))
@@ -55,4 +56,9 @@ class DataScraper:
       sleep_time = self.price_recording_time_interval - (time.time() - start_time)
       if sleep_time > 0:
         time.sleep(sleep_time)
+
+    def get_server_url(self):
+      with open("secret.json", "r") as f:
+        data = json.loads(f.read())
+        self.server_url = data['SERVER_URL']
 

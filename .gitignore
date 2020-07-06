@@ -6,4 +6,4 @@ venv/
 scraper.py
 .idea
 __pycache__
-
+secret.json

@@ -23,8 +23,8 @@ class RobinhoodClient:
     }
 
     AUTH_FILE_PATH = 'auth.secret'
-    USERNAME = os.environ['RH_USERNAME']
-    PASSWORD = os.environ['RH_PASSWORD']
+    USERNAME = None
+    PASSWORD = None
     DEVICE_TOKEN = ""
     AUTH_TOKEN = ""
     REFRESH_TOKEN = ""
@@ -42,6 +42,7 @@ class RobinhoodClient:
       self.DEVICE_TOKEN = generateDeviceToken()
       self.session = self.get_session()
       self.currency_pairs = self.get_currency_pairs()
+      self.load_login_info()
 
     def get_session(self):
       session = requests.session()
@@ -199,3 +200,10 @@ class RobinhoodClient:
             print("Status code: {}".format(res.status_code))
             print(res.content)
             return False
+
+    def load_login_info(self):
+      with open("secret.json", "r") as f:
+        data = f.read()
+        json_data = json.loads(data)
+        self.USERNAME = json_data['USERNAME']
+        self.PASSWORD = json_data['PASSWORD']
