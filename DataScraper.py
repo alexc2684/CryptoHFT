@@ -14,7 +14,7 @@ class DataScraper:
       self.price_recording_time_interval = price_recording_time_interval
       self.asset_name = asset_name
       self.queue_size = queue_size
-      self.server_url = get_server_url()
+      self.server_url = self.get_server_url()
 
       response = requests.get(self.server_url + '/currencies')
       currency_pairs = dict(json.loads(response.text))
@@ -59,6 +59,5 @@ class DataScraper:
 
     def get_server_url(self):
       with open("secret.json", "r") as f:
-        data = json.loads(f.read())
-        self.server_url = data['SERVER_URL']
-
+        data = dict(json.loads(f.read()))
+        return data['SERVER_URL']
