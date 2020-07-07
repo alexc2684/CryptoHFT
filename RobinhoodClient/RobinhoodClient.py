@@ -110,21 +110,20 @@ class RobinhoodClient:
             'Authorization': 'Bearer ' + self.AUTH_TOKEN
         }
         request_url = self.RH_API_URL + "marketdata/forex/quotes/{}/".format(self.currency_pairs[symbol])
-        print(headers)
-        request = Request(headers, request_url)
-        response = self.authorized_get_request(request)
 
-        print(response.text)
+        request = Request(headers, request_url)
+        response = self.request_login_wrapper(request)
+
         content = json.loads(response.text)
         price_data = dict(content)
         price_data['time'] = time()
         return price_data
 
-    def authorized_get_request(self, request):
+    def request_login_wrapper(self, request):
         try:
             return request.get_request()
         except:
-            self.refresh_login()
+            self.login()
             return request.get_request()
 
     def get_currency_pairs(self):
@@ -141,27 +140,6 @@ class RobinhoodClient:
             self.currency_pairs[currency] = pair_id
 
         return self.currency_pairs
-
-    #Util Methods
-    def auth_requires_refresh_token(self, expire_time):
-        return time() > expire_time
-
-    def read_file(self, filepath) -> (str, None):
-        if self.is_existing_file(filepath):
-            data = open(filepath, 'r').read()
-            return data
-
-    def is_existing_file(self, filepath):
-        try:
-            f = open(filepath)
-            f.close()
-            return True
-        except IOError:
-            return False
-
-    def write_json_data_file(self, filepath, data):
-        with open(filepath, 'w') as f:
-            f.write(json.dumps(data))
 
     def place_order(self, symbol, quantity, price, order_type):
         assert symbol in self.currency_pairs
@@ -200,6 +178,28 @@ class RobinhoodClient:
             print("Status code: {}".format(res.status_code))
             print(res.content)
             return False
+
+    #Util Methods
+    def auth_requires_refresh_token(self, expire_time):
+        return time() > expire_time
+
+    def read_file(self, filepath) -> (str, None):
+        if self.is_existing_file(filepath):
+            data = open(filepath, 'r').read()
+            return data
+
+    def is_existing_file(self, filepath):
+        try:
+            f = open(filepath)
+            f.close()
+            return True
+        except IOError:
+            return False
+
+    def write_json_data_file(self, filepath, data):
+        with open(filepath, 'w') as f:
+            f.write(json.dumps(data))
+
 
     def load_login_info(self):
       with open("secret.json", "r") as f:
